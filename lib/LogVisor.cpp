@@ -118,6 +118,8 @@ struct ConsoleLogger : public ILogger
             fprintf(stderr, " (%s)", thrName);
         SetConsoleTextAttribute(Term, FOREGROUND_INTENSITY | FOREGROUND_GREEN);
         fprintf(stderr, " %5.4f", tmd);
+        if (FrameIndex)
+            fprintf(fp, " (%llu)", FrameIndex);
         SetConsoleTextAttribute(Term, FOREGROUND_INTENSITY);
         fprintf(stderr, "] ");
         SetConsoleTextAttribute(Term, 0);
@@ -145,8 +147,10 @@ struct ConsoleLogger : public ILogger
             fprintf(stderr, NORMAL BOLD " %s", modName);
             if (thrName)
                 fprintf(stderr, " (%s)", thrName);
-            fprintf(stderr, GREEN " %5.4f" NORMAL BOLD, tmd);
-            fprintf(stderr, "] " NORMAL);
+            fprintf(stderr, GREEN " %5.4f", tmd);
+            if (FrameIndex)
+                fprintf(stderr, " (%lu)", FrameIndex);
+            fprintf(stderr, NORMAL BOLD "] " NORMAL);
         }
         else
         {
@@ -172,6 +176,8 @@ struct ConsoleLogger : public ILogger
             if (thrName)
                 fprintf(stderr, " (%s)", thrName);
             fprintf(stderr, " %5.4f", tmd);
+            if (FrameIndex)
+                fprintf(stderr, " (%lu)", FrameIndex);
             fprintf(stderr, "] ");
         }
 #endif
@@ -248,6 +254,8 @@ struct FileLogger : public ILogger
         if (thrName)
             fprintf(fp, " (%s)", thrName);
         fprintf(fp, " %5.4f", tmd);
+        if (FrameIndex)
+            fprintf(fp, " (%lu)", FrameIndex);
         fprintf(fp, "] ");
     }
 
