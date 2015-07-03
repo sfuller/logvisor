@@ -4,6 +4,8 @@ TARGET = LogVisor
 CONFIG -= Qt
 QT      =
 
+INCLUDEPATH += include
+
 HEADERS += \
     include/LogVisor/LogVisor.hpp
 
