@@ -10,7 +10,7 @@
 namespace LogVisor
 {
 
-#if WIN32 && UNICODE
+#if _WIN32 && UNICODE
 #define LOG_UCS2 1
 #endif
 
@@ -19,10 +19,10 @@ namespace LogVisor
  */
 enum Level
 {
-    INFO,        /**< Non-error informative message */
-    WARNING,     /**< Non-error warning message */
-    ERROR,       /**< Recoverable error message */
-    FATAL_ERROR  /**< Non-recoverable error message (calls abort) */
+    Info,        /**< Non-error informative message */
+    Warning,     /**< Non-error warning message */
+    Error,       /**< Recoverable error message */
+    FatalError   /**< Non-recoverable error message (calls abort) */
 };
 
 /**
@@ -114,7 +114,7 @@ public:
         for (auto& logger : MainLoggers)
             logger->report(m_modName, severity, format, ap);
         va_end(ap);
-        if (severity == FATAL_ERROR)
+        if (severity == FatalError)
             abort();
     }
 };

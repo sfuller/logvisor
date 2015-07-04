@@ -1,6 +1,6 @@
 #if _WIN32
 #define _WIN32_LEAN_AND_MEAN 1
-#include <Windows.h>
+#include <windows.h>
 #endif
 
 #include <chrono>
@@ -29,14 +29,14 @@ void RegisterThreadName(const char* name)
     pthread_setname_np(name);
 #elif __linux__
     pthread_setname_np(pthread_self(), name);
-#elif _WIN32
+#elif _MSC_VER
     struct
     {
         DWORD dwType; // Must be 0x1000.
         LPCSTR szName; // Pointer to name (in user addr space).
         DWORD dwThreadID; // Thread ID (-1=caller thread).
         DWORD dwFlags; // Reserved for future use, must be zero.
-    } info = {0x1000, name, -1, 0};
+    } info = {0x1000, name, (DWORD)-1, 0};
     __try
     {
         RaiseException(0x406D1388, 0, sizeof(info)/sizeof(ULONG_PTR), (ULONG_PTR*)&info);
@@ -96,19 +96,19 @@ struct ConsoleLogger : public ILogger
         fprintf(stderr, "[");
         switch (severity)
         {
-        case INFO:
+        case Info:
             SetConsoleTextAttribute(Term, FOREGROUND_INTENSITY | FOREGROUND_RED | FOREGROUND_BLUE);
             fprintf(stderr, "INFO");
             break;
-        case WARNING:
+        case Warning:
             SetConsoleTextAttribute(Term, FOREGROUND_INTENSITY | FOREGROUND_RED | FOREGROUND_GREEN);
             fprintf(stderr, "WARNING");
             break;
-        case ERROR:
+        case Error:
             SetConsoleTextAttribute(Term, FOREGROUND_INTENSITY | FOREGROUND_RED);
             fprintf(stderr, "ERROR");
             break;
-        case FATAL_ERROR:
+        case FatalError:
             SetConsoleTextAttribute(Term, FOREGROUND_INTENSITY | FOREGROUND_RED);
             fprintf(stderr, "FATAL ERROR");
             break;
@@ -122,7 +122,7 @@ struct ConsoleLogger : public ILogger
         SetConsoleTextAttribute(Term, FOREGROUND_INTENSITY | FOREGROUND_GREEN);
         fprintf(stderr, " %5.4f", tmd);
         if (FrameIndex)
-            fprintf(fp, " (%llu)", FrameIndex);
+            fprintf(stderr, " (%llu)", FrameIndex);
         SetConsoleTextAttribute(Term, FOREGROUND_INTENSITY);
         fprintf(stderr, "] ");
         SetConsoleTextAttribute(Term, 0);
@@ -238,16 +238,16 @@ struct FileLogger : public ILogger
         fprintf(fp, "[");
         switch (severity)
         {
-        case INFO:
+        case Info:
             fprintf(fp, "INFO");
             break;
-        case WARNING:
+        case Warning:
             fprintf(fp, "WARNING");
             break;
-        case ERROR:
+        case Error:
             fprintf(fp, "ERROR");
             break;
-        case FATAL_ERROR:
+        case FatalError:
             fprintf(fp, "FATAL ERROR");
             break;
         default:
