@@ -35,6 +35,12 @@ struct ILogger
                         const char* format, va_list ap)=0;
     virtual void report(const char* modName, Level severity,
                         const wchar_t* format, va_list ap)=0;
+    virtual void reportSource(const char* modName, Level severity,
+                              const char* file, unsigned linenum,
+                              const char* format, va_list ap)=0;
+    virtual void reportSource(const char* modName, Level severity,
+                              const char* file, unsigned linenum,
+                              const wchar_t* format, va_list ap)=0;
 };
 
 /**
@@ -113,6 +119,25 @@ public:
         va_start(ap, format);
         for (auto& logger : MainLoggers)
             logger->report(m_modName, severity, format, ap);
+        va_end(ap);
+        if (severity == FatalError)
+            abort();
+    }
+
+    /**
+     * @brief Route new log message with source info to centralized ILogger
+     * @param severity Level of log report severity
+     * @param file Source file name from __FILE__ macro
+     * @param linenum Source line number from __LINE__ macro
+     * @param format Standard printf-style format string
+     */
+    template <typename CharType>
+    inline void reportSource(Level severity, const char* file, unsigned linenum, const CharType* format, ...)
+    {
+        va_list ap;
+        va_start(ap, format);
+        for (auto& logger : MainLoggers)
+            logger->reportSource(m_modName, severity, file, linenum, format, ap);
         va_end(ap);
         if (severity == FatalError)
             abort();

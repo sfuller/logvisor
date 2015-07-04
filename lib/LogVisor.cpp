@@ -11,10 +11,11 @@
 #include "LogVisor/LogVisor.hpp"
 
 /* ANSI sequences */
-#define RED "\x1b[39m"
-#define YELLOW "\x1b[41m"
-#define GREEN "\x1b[40m"
-#define CYAN "\x1b[44m"
+#define RED "\x1b[1;31m"
+#define YELLOW "\x1b[1;33m"
+#define GREEN "\x1b[1;32m"
+#define MAGENTA "\x1b[1;35m"
+#define CYAN "\x1b[1;36m"
 #define BOLD "\x1b[1m"
 #define NORMAL "\x1b[0m"
 
@@ -81,7 +82,7 @@ struct ConsoleLogger : public ILogger
 #endif
     }
 
-    static void _reportHead(const char* modName, Level severity)
+    static void _reportHead(const char* modName, const char* sourceInfo, Level severity)
     {
         std::chrono::steady_clock::duration tm = CurrentUptime();
         double tmd = tm.count() *
@@ -95,6 +96,10 @@ struct ConsoleLogger : public ILogger
 #if _WIN32
         SetConsoleTextAttribute(Term, FOREGROUND_INTENSITY);
         fprintf(stderr, "[");
+        SetConsoleTextAttribute(Term, FOREGROUND_INTENSITY | FOREGROUND_GREEN);
+        fprintf(stderr, "%5.4f ", tmd);
+        if (FrameIndex)
+            fprintf(stderr, "(%llu) ", FrameIndex);
         switch (severity)
         {
         case Info:
@@ -118,12 +123,12 @@ struct ConsoleLogger : public ILogger
         };
         SetConsoleTextAttribute(Term, FOREGROUND_INTENSITY);
         fprintf(stderr, " %s", modName);
+        SetConsoleTextAttribute(Term, FOREGROUND_INTENSITY | FOREGROUND_RED | FOREGROUND_GREEN);
+        if (sourceInfo)
+            fprintf(stderr, " {%s}", sourceInfo);
+        SetConsoleTextAttribute(Term, FOREGROUND_INTENSITY | FOREGROUND_RED | FOREGROUND_BLUE);
         if (thrName)
             fprintf(stderr, " (%s)", thrName);
-        SetConsoleTextAttribute(Term, FOREGROUND_INTENSITY | FOREGROUND_GREEN);
-        fprintf(stderr, " %5.4f", tmd);
-        if (FrameIndex)
-            fprintf(stderr, " (%llu)", FrameIndex);
         SetConsoleTextAttribute(Term, FOREGROUND_INTENSITY);
         fprintf(stderr, "] ");
         SetConsoleTextAttribute(Term, 0);
@@ -131,6 +136,9 @@ struct ConsoleLogger : public ILogger
         if (XtermColor)
         {
             fprintf(stderr, BOLD "[");
+            fprintf(stderr, GREEN "%5.4f ", tmd);
+            if (FrameIndex)
+                fprintf(stderr, "(%lu) ", FrameIndex);
             switch (severity)
             {
             case Info:
@@ -140,7 +148,7 @@ struct ConsoleLogger : public ILogger
                 fprintf(stderr, BOLD YELLOW "WARNING");
                 break;
             case Error:
-                fprintf(stderr, BOLD RED "ERROR");
+                fprintf(stderr, RED BOLD "ERROR");
                 break;
             case FatalError:
                 fprintf(stderr, BOLD RED "FATAL ERROR");
@@ -149,16 +157,18 @@ struct ConsoleLogger : public ILogger
                 break;
             };
             fprintf(stderr, NORMAL BOLD " %s", modName);
+            if (sourceInfo)
+                fprintf(stderr, BOLD YELLOW " {%s}", sourceInfo);
             if (thrName)
-                fprintf(stderr, " (%s)", thrName);
-            fprintf(stderr, GREEN " %5.4f", tmd);
-            if (FrameIndex)
-                fprintf(stderr, " (%lu)", FrameIndex);
+                fprintf(stderr, BOLD MAGENTA " (%s)", thrName);
             fprintf(stderr, NORMAL BOLD "] " NORMAL);
         }
         else
         {
             fprintf(stderr, "[");
+            fprintf(stderr, "%5.4f ", tmd);
+            if (FrameIndex)
+                fprintf(stderr, "(%lu) ", FrameIndex);
             switch (severity)
             {
             case Info:
@@ -177,11 +187,10 @@ struct ConsoleLogger : public ILogger
                 break;
             };
             fprintf(stderr, " %s", modName);
+            if (sourceInfo)
+                fprintf(stderr, " {%s}", sourceInfo);
             if (thrName)
                 fprintf(stderr, " (%s)", thrName);
-            fprintf(stderr, " %5.4f", tmd);
-            if (FrameIndex)
-                fprintf(stderr, " (%lu)", FrameIndex);
             fprintf(stderr, "] ");
         }
 #endif
@@ -191,7 +200,7 @@ struct ConsoleLogger : public ILogger
                 const char* format, va_list ap)
     {
         std::unique_lock<std::mutex> lk(m);
-        _reportHead(modName, severity);
+        _reportHead(modName, nullptr, severity);
         vfprintf(stderr, format, ap);
         fprintf(stderr, "\n");
     }
@@ -200,7 +209,31 @@ struct ConsoleLogger : public ILogger
                 const wchar_t* format, va_list ap)
     {
         std::unique_lock<std::mutex> lk(m);
-        _reportHead(modName, severity);
+        _reportHead(modName, nullptr, severity);
+        vfwprintf(stderr, format, ap);
+        fprintf(stderr, "\n");
+    }
+
+    void reportSource(const char* modName, Level severity,
+                      const char* file, unsigned linenum,
+                      const char* format, va_list ap)
+    {
+        std::unique_lock<std::mutex> lk(m);
+        char sourceInfo[128];
+        snprintf(sourceInfo, 128, "%s:%u", file, linenum);
+        _reportHead(modName, sourceInfo, severity);
+        vfprintf(stderr, format, ap);
+        fprintf(stderr, "\n");
+    }
+
+    void reportSource(const char* modName, Level severity,
+                      const char* file, unsigned linenum,
+                      const wchar_t* format, va_list ap)
+    {
+        std::unique_lock<std::mutex> lk(m);
+        char sourceInfo[128];
+        snprintf(sourceInfo, 128, "%s:%u", file, linenum);
+        _reportHead(modName, sourceInfo, severity);
         vfwprintf(stderr, format, ap);
         fprintf(stderr, "\n");
     }
@@ -226,7 +259,7 @@ struct FileLogger : public ILogger
     virtual void openFile()=0;
     virtual void closeFile() {fclose(fp);}
 
-    void _reportHead(const char* modName, Level severity)
+    void _reportHead(const char* modName, const char* sourceInfo, Level severity)
     {
         std::chrono::steady_clock::duration tm = CurrentUptime();
         double tmd = tm.count() *
@@ -256,6 +289,8 @@ struct FileLogger : public ILogger
             break;
         };
         fprintf(fp, " %s", modName);
+        if (sourceInfo)
+            fprintf(stderr, " {%s}", sourceInfo);
         if (thrName)
             fprintf(fp, " (%s)", thrName);
         fprintf(fp, " %5.4f", tmd);
@@ -269,7 +304,7 @@ struct FileLogger : public ILogger
     {
         std::unique_lock<std::mutex> lk(m);
         openFile();
-        _reportHead(modName, severity);
+        _reportHead(modName, nullptr, severity);
         vfprintf(fp, format, ap);
         fprintf(fp, "\n");
         closeFile();
@@ -280,7 +315,35 @@ struct FileLogger : public ILogger
     {
         std::unique_lock<std::mutex> lk(m);
         openFile();
-        _reportHead(modName, severity);
+        _reportHead(modName, nullptr, severity);
+        vfwprintf(fp, format, ap);
+        fprintf(fp, "\n");
+        closeFile();
+    }
+
+    void reportSource(const char* modName, Level severity,
+                      const char* file, unsigned linenum,
+                      const char* format, va_list ap)
+    {
+        std::unique_lock<std::mutex> lk(m);
+        openFile();
+        char sourceInfo[128];
+        snprintf(sourceInfo, 128, "%s:%u", file, linenum);
+        _reportHead(modName, sourceInfo, severity);
+        vfprintf(fp, format, ap);
+        fprintf(fp, "\n");
+        closeFile();
+    }
+
+    void reportSource(const char* modName, Level severity,
+                      const char* file, unsigned linenum,
+                      const wchar_t* format, va_list ap)
+    {
+        std::unique_lock<std::mutex> lk(m);
+        openFile();
+        char sourceInfo[128];
+        snprintf(sourceInfo, 128, "%s:%u", file, linenum);
+        _reportHead(modName, sourceInfo, severity);
         vfwprintf(fp, format, ap);
         fprintf(fp, "\n");
         closeFile();
