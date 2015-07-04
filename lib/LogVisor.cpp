@@ -84,7 +84,8 @@ struct ConsoleLogger : public ILogger
     static void _reportHead(const char* modName, Level severity)
     {
         std::chrono::steady_clock::duration tm = CurrentUptime();
-        double tmd = std::chrono::steady_clock::duration::period::num * tm.count() /
+        double tmd = tm.count() *
+            std::chrono::steady_clock::duration::period::num /
             (double)std::chrono::steady_clock::duration::period::den;
         std::thread::id thrId = std::this_thread::get_id();
         const char* thrName = nullptr;
@@ -132,16 +133,16 @@ struct ConsoleLogger : public ILogger
             fprintf(stderr, BOLD "[");
             switch (severity)
             {
-            case INFO:
+            case Info:
                 fprintf(stderr, BOLD CYAN "INFO");
                 break;
-            case WARNING:
+            case Warning:
                 fprintf(stderr, BOLD YELLOW "WARNING");
                 break;
-            case ERROR:
+            case Error:
                 fprintf(stderr, BOLD RED "ERROR");
                 break;
-            case FATAL_ERROR:
+            case FatalError:
                 fprintf(stderr, BOLD RED "FATAL ERROR");
                 break;
             default:
@@ -160,16 +161,16 @@ struct ConsoleLogger : public ILogger
             fprintf(stderr, "[");
             switch (severity)
             {
-            case INFO:
+            case Info:
                 fprintf(stderr, "INFO");
                 break;
-            case WARNING:
+            case Warning:
                 fprintf(stderr, "WARNING");
                 break;
-            case ERROR:
+            case Error:
                 fprintf(stderr, "ERROR");
                 break;
-            case FATAL_ERROR:
+            case FatalError:
                 fprintf(stderr, "FATAL ERROR");
                 break;
             default:
@@ -228,7 +229,8 @@ struct FileLogger : public ILogger
     void _reportHead(const char* modName, Level severity)
     {
         std::chrono::steady_clock::duration tm = CurrentUptime();
-        double tmd = std::chrono::steady_clock::duration::period::num * tm.count() /
+        double tmd = tm.count() *
+            std::chrono::steady_clock::duration::period::num /
             (double)std::chrono::steady_clock::duration::period::den;
         std::thread::id thrId = std::this_thread::get_id();
         const char* thrName = nullptr;
