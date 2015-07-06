@@ -6,6 +6,8 @@
 #include <stdio.h>
 #include <vector>
 #include <memory>
+#include <locale>
+#include <codecvt>
 
 namespace LogVisor
 {
@@ -15,6 +17,29 @@ namespace LogVisor
 #endif
 
 /**
+ * @brief Exception thrown when FatalError is issued
+ */
+class FatalException : public std::exception
+{
+    std::string m_what;
+public:
+    FatalException(const char* format, va_list ap)
+    {
+        char buf[1024];
+        vsnprintf(buf, 1024, format, ap);
+        m_what.assign(buf);
+    }
+    FatalException(const wchar_t* format, va_list ap)
+    {
+        wchar_t buf[1024];
+        vswprintf(buf, 1024, format, ap);
+        std::wstring_convert<std::codecvt_utf8<wchar_t>> conv;
+        m_what.assign(conv.to_bytes(buf));
+    }
+    inline const char* what() const noexcept {return m_what.c_str();}
+};
+
+/**
  * @brief Severity level for log messages
  */
 enum Level
@@ -22,7 +47,7 @@ enum Level
     Info,        /**< Non-error informative message */
     Warning,     /**< Non-error warning message */
     Error,       /**< Recoverable error message */
-    FatalError   /**< Non-recoverable error message (calls abort) */
+    FatalError   /**< Non-recoverable error message (throws exception) */
 };
 
 /**
@@ -119,9 +144,9 @@ public:
         va_start(ap, format);
         for (auto& logger : MainLoggers)
             logger->report(m_modName, severity, format, ap);
-        va_end(ap);
         if (severity == FatalError)
-            abort();
+            throw FatalException(format, ap);
+        va_end(ap);
     }
 
     /**
@@ -138,9 +163,9 @@ public:
         va_start(ap, format);
         for (auto& logger : MainLoggers)
             logger->reportSource(m_modName, severity, file, linenum, format, ap);
-        va_end(ap);
         if (severity == FatalError)
-            abort();
+            throw FatalException(format, ap);
+        va_end(ap);
     }
 };
 
