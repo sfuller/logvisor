@@ -73,7 +73,7 @@ struct ConsoleLogger : public ILogger
         if (!Term)
         {
             Term = getenv("TERM");
-            if (!strncmp(Term, "xterm", 5))
+            if (Term && !strncmp(Term, "xterm", 5))
             {
                 XtermColor = true;
                 putenv((char*)"TERM=xterm-16color");
