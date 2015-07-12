@@ -1,5 +1,5 @@
 include_directories(include)
-set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++11")
+set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++11 -D_GLIBCXX_USE_CXX11_ABI=1")
 add_library(LogVisor
             lib/LogVisor.cpp
             include/LogVisor/LogVisor.hpp)
