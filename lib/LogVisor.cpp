@@ -1,6 +1,7 @@
 #if _WIN32
 #define _WIN32_LEAN_AND_MEAN 1
 #include <windows.h>
+#define snprintf _snprintf
 #endif
 
 #include <chrono>
@@ -18,6 +19,10 @@
 #define CYAN "\x1b[1;36m"
 #define BOLD "\x1b[1m"
 #define NORMAL "\x1b[0m"
+
+#if _WIN32
+#define FOREGROUND_WHITE FOREGROUND_RED|FOREGROUND_GREEN|FOREGROUND_BLUE
+#endif
 
 namespace LogVisor
 {
@@ -94,7 +99,7 @@ struct ConsoleLogger : public ILogger
             thrName = ThreadMap[thrId];
 
 #if _WIN32
-        SetConsoleTextAttribute(Term, FOREGROUND_INTENSITY);
+        SetConsoleTextAttribute(Term, FOREGROUND_INTENSITY | FOREGROUND_WHITE);
         fprintf(stderr, "[");
         SetConsoleTextAttribute(Term, FOREGROUND_INTENSITY | FOREGROUND_GREEN);
         fprintf(stderr, "%5.4f ", tmd);
@@ -103,7 +108,7 @@ struct ConsoleLogger : public ILogger
         switch (severity)
         {
         case Info:
-            SetConsoleTextAttribute(Term, FOREGROUND_INTENSITY | FOREGROUND_RED | FOREGROUND_BLUE);
+            SetConsoleTextAttribute(Term, FOREGROUND_INTENSITY | FOREGROUND_GREEN | FOREGROUND_BLUE);
             fprintf(stderr, "INFO");
             break;
         case Warning:
@@ -121,7 +126,7 @@ struct ConsoleLogger : public ILogger
         default:
             break;
         };
-        SetConsoleTextAttribute(Term, FOREGROUND_INTENSITY);
+        SetConsoleTextAttribute(Term, FOREGROUND_INTENSITY | FOREGROUND_WHITE);
         fprintf(stderr, " %s", modName);
         SetConsoleTextAttribute(Term, FOREGROUND_INTENSITY | FOREGROUND_RED | FOREGROUND_GREEN);
         if (sourceInfo)
@@ -129,9 +134,9 @@ struct ConsoleLogger : public ILogger
         SetConsoleTextAttribute(Term, FOREGROUND_INTENSITY | FOREGROUND_RED | FOREGROUND_BLUE);
         if (thrName)
             fprintf(stderr, " (%s)", thrName);
-        SetConsoleTextAttribute(Term, FOREGROUND_INTENSITY);
+        SetConsoleTextAttribute(Term, FOREGROUND_INTENSITY | FOREGROUND_WHITE);
         fprintf(stderr, "] ");
-        SetConsoleTextAttribute(Term, 0);
+        SetConsoleTextAttribute(Term, FOREGROUND_WHITE);
 #else
         if (XtermColor)
         {

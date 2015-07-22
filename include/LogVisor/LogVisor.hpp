@@ -36,7 +36,11 @@ public:
         std::wstring_convert<std::codecvt_utf8<wchar_t>> conv;
         m_what.assign(conv.to_bytes(buf));
     }
+#if _MSC_VER
+    inline const char* what() const {return m_what.c_str();}
+#else
     inline const char* what() const noexcept {return m_what.c_str();}
+#endif
 };
 
 /**
