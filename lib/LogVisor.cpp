@@ -59,7 +59,7 @@ static std::chrono::steady_clock MonoClock;
 static std::chrono::steady_clock::time_point GlobalStart = MonoClock.now();
 static inline std::chrono::steady_clock::duration CurrentUptime()
 {return MonoClock.now() - GlobalStart;}
-uint64_t FrameIndex = 0;
+std::atomic_uint_fast64_t FrameIndex(0);
 
 #if _WIN32
 static HANDLE Term = 0;
@@ -143,8 +143,9 @@ struct ConsoleLogger : public ILogger
         {
             fprintf(stderr, BOLD "[");
             fprintf(stderr, GREEN "%5.4f ", tmd);
-            if (FrameIndex)
-                fprintf(stderr, "(%lu) ", FrameIndex);
+            uint_fast64_t fIdx = FrameIndex.load();
+            if (fIdx)
+                fprintf(stderr, "(%lu) ", fIdx);
             switch (severity)
             {
             case Info:
@@ -173,8 +174,9 @@ struct ConsoleLogger : public ILogger
         {
             fprintf(stderr, "[");
             fprintf(stderr, "%5.4f ", tmd);
-            if (FrameIndex)
-                fprintf(stderr, "(%lu) ", FrameIndex);
+            uint_fast64_t fIdx = FrameIndex.load();
+            if (fIdx)
+                fprintf(stderr, "(%lu) ", fIdx);
             switch (severity)
             {
             case Info:
@@ -300,8 +302,9 @@ struct FileLogger : public ILogger
         if (thrName)
             fprintf(fp, " (%s)", thrName);
         fprintf(fp, " %5.4f", tmd);
-        if (FrameIndex)
-            fprintf(fp, " (%lu)", FrameIndex);
+        uint_fast64_t fIdx = FrameIndex.load();
+        if (fIdx)
+            fprintf(fp, " (%lu)", fIdx);
         fprintf(fp, "] ");
     }
 

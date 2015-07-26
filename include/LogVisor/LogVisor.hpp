@@ -102,7 +102,7 @@ extern std::atomic_size_t ErrorCount;
  * The default value is zero, the app is responsible for updating it
  * within its main loop.
  */
-extern uint64_t FrameIndex;
+extern std::atomic_uint_fast64_t FrameIndex;
 
 /**
  * @brief Restore centralized logger vector to default state (silent operation)
