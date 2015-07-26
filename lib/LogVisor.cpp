@@ -54,6 +54,7 @@ void RegisterThreadName(const char* name)
 }
 
 std::vector<std::unique_ptr<ILogger>> MainLoggers;
+std::atomic_size_t ErrorCount(0);
 static std::chrono::steady_clock MonoClock;
 static std::chrono::steady_clock::time_point GlobalStart = MonoClock.now();
 static inline std::chrono::steady_clock::duration CurrentUptime()

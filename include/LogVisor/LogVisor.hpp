@@ -5,6 +5,7 @@
 #include <string.h>
 #include <stdio.h>
 #include <vector>
+#include <atomic>
 #include <memory>
 #include <locale>
 #include <codecvt>
@@ -16,6 +17,7 @@ namespace LogVisor
 #define LOG_UCS2 1
 #endif
 
+#if LOG_VISOR_EXCEPTIONS
 /**
  * @brief Exception thrown when FatalError is issued
  */
@@ -42,6 +44,7 @@ public:
     inline const char* what() const noexcept {return m_what.c_str();}
 #endif
 };
+#endif
 
 /**
  * @brief Severity level for log messages
@@ -84,6 +87,13 @@ void RegisterThreadName(const char* name);
  * All loggers added to this vector will receive reports as they occur
  */
 extern std::vector<std::unique_ptr<ILogger>> MainLoggers;
+
+/**
+ * @brief Centralized error counter
+ *
+ * All submodules accumulate this value
+ */
+extern std::atomic_size_t ErrorCount;
 
 /**
  * @brief Centralized frame index
@@ -146,11 +156,23 @@ public:
     {
         va_list ap;
         va_start(ap, format);
+        report(severity, format, ap);
+        va_end(ap);
+    }
+
+    template <typename CharType>
+    inline void report(Level severity, const CharType* format, va_list ap)
+    {
         for (auto& logger : MainLoggers)
             logger->report(m_modName, severity, format, ap);
         if (severity == FatalError)
+#if LOG_VISOR_EXCEPTIONS
             throw FatalException(format, ap);
-        va_end(ap);
+#else
+            abort();
+#endif
+        else if (severity == Error)
+            ++ErrorCount;
     }
 
     /**
@@ -165,11 +187,23 @@ public:
     {
         va_list ap;
         va_start(ap, format);
+        reportSource(severity, file, linenum, format, ap);
+        va_end(ap);
+    }
+
+    template <typename CharType>
+    inline void reportSource(Level severity, const char* file, unsigned linenum, const CharType* format, va_list ap)
+    {
         for (auto& logger : MainLoggers)
             logger->reportSource(m_modName, severity, file, linenum, format, ap);
         if (severity == FatalError)
+#if LOG_VISOR_EXCEPTIONS
             throw FatalException(format, ap);
-        va_end(ap);
+#else
+            abort();
+#endif
+        else if (severity == Error)
+            ++ErrorCount;
     }
 };
 
