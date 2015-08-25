@@ -7,43 +7,12 @@
 #include <vector>
 #include <atomic>
 #include <memory>
-#include <locale>
-#include <codecvt>
 
 namespace LogVisor
 {
 
 #if _WIN32 && UNICODE
 #define LOG_UCS2 1
-#endif
-
-#if LOG_VISOR_EXCEPTIONS
-/**
- * @brief Exception thrown when FatalError is issued
- */
-class FatalException : public std::exception
-{
-    std::string m_what;
-public:
-    FatalException(const char* format, va_list ap)
-    {
-        char buf[1024];
-        vsnprintf(buf, 1024, format, ap);
-        m_what.assign(buf);
-    }
-    FatalException(const wchar_t* format, va_list ap)
-    {
-        wchar_t buf[1024];
-        vswprintf(buf, 1024, format, ap);
-        std::wstring_convert<std::codecvt_utf8<wchar_t>> conv;
-        m_what.assign(conv.to_bytes(buf));
-    }
-#if _MSC_VER
-    inline const char* what() const {return m_what.c_str();}
-#else
-    inline const char* what() const noexcept {return m_what.c_str();}
-#endif
-};
 #endif
 
 /**
@@ -166,11 +135,7 @@ public:
         for (auto& logger : MainLoggers)
             logger->report(m_modName, severity, format, ap);
         if (severity == FatalError)
-#if LOG_VISOR_EXCEPTIONS
-            throw FatalException(format, ap);
-#else
             abort();
-#endif
         else if (severity == Error)
             ++ErrorCount;
     }
@@ -197,11 +162,7 @@ public:
         for (auto& logger : MainLoggers)
             logger->reportSource(m_modName, severity, file, linenum, format, ap);
         if (severity == FatalError)
-#if LOG_VISOR_EXCEPTIONS
-            throw FatalException(format, ap);
-#else
             abort();
-#endif
         else if (severity == Error)
             ++ErrorCount;
     }
