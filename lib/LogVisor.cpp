@@ -10,6 +10,7 @@
 #include <thread>
 #include <unordered_map>
 #include <stdio.h>
+#include <inttypes.h>
 #include "LogVisor/LogVisor.hpp"
 
 /* ANSI sequences */
@@ -107,7 +108,7 @@ struct ConsoleLogger : public ILogger
         fprintf(stderr, "%5.4f ", tmd);
         uint64_t fi = FrameIndex.load();
         if (fi)
-            fprintf(stderr, "(%llu) ", fi);
+            fprintf(stderr, "(%" PRIu64 ") ", fi);
         switch (severity)
         {
         case Info:
@@ -306,7 +307,7 @@ struct FileLogger : public ILogger
         fprintf(fp, " %5.4f", tmd);
         uint_fast64_t fIdx = FrameIndex.load();
         if (fIdx)
-            fprintf(fp, " (%llu)", fIdx);
+            fprintf(fp, " (%" PRIu64 ")", fIdx);
         fprintf(fp, "] ");
     }
 
