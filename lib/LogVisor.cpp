@@ -1,7 +1,8 @@
 #if _WIN32
-#define _WIN32_LEAN_AND_MEAN 1
+#ifndef WIN32_LEAN_AND_MEAN
+#define WIN32_LEAN_AND_MEAN 1
+#endif
 #include <windows.h>
-#define snprintf _snprintf
 #endif
 
 #include <chrono>
@@ -104,8 +105,9 @@ struct ConsoleLogger : public ILogger
         fprintf(stderr, "[");
         SetConsoleTextAttribute(Term, FOREGROUND_INTENSITY | FOREGROUND_GREEN);
         fprintf(stderr, "%5.4f ", tmd);
-        if (FrameIndex)
-            fprintf(stderr, "(%llu) ", FrameIndex);
+        uint64_t fi = FrameIndex.load();
+        if (fi)
+            fprintf(stderr, "(%llu) ", fi);
         switch (severity)
         {
         case Info:
@@ -304,7 +306,7 @@ struct FileLogger : public ILogger
         fprintf(fp, " %5.4f", tmd);
         uint_fast64_t fIdx = FrameIndex.load();
         if (fIdx)
-            fprintf(fp, " (%lu)", fIdx);
+            fprintf(fp, " (%llu)", fIdx);
         fprintf(fp, "] ");
     }
 
