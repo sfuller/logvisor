@@ -3,6 +3,10 @@
 #define WIN32_LEAN_AND_MEAN 1
 #endif
 #include <windows.h>
+#else
+#include <sys/ioctl.h>
+#include <fcntl.h>
+#include <unistd.h>
 #endif
 
 #include <chrono>
@@ -62,6 +66,23 @@ static std::chrono::steady_clock::time_point GlobalStart = MonoClock.now();
 static inline std::chrono::steady_clock::duration CurrentUptime()
 {return MonoClock.now() - GlobalStart;}
 std::atomic_uint_fast64_t FrameIndex(0);
+    
+static inline int ConsoleWidth()
+{
+    int retval = 80;
+#if _WIN32
+    CONSOLE_SCREEN_BUFFER_INFO info;
+    GetConsoleScreenBufferInfo(GetStdHandle(STD_OUTPUT_HANDLE), &info);
+    retval = info.dwSize.X;
+#else
+    struct winsize w;
+    if (ioctl(STDOUT_FILENO, TIOCGWINSZ, &w) != -1)
+        retval = w.ws_col;
+#endif
+    if (retval < 10)
+        return 10;
+    return retval;
+}
 
 #if _WIN32
 static HANDLE Term = 0;
@@ -75,6 +96,9 @@ struct ConsoleLogger : public ILogger
     ConsoleLogger()
     {
 #if _WIN32
+        const char* conemuANSI = getenv("ConEmuANSI");
+        if (conemuANSI && !strcmp(conemuANSI, "ON"))
+            XtermColor = true;
         if (!Term)
             Term = GetStdHandle(STD_ERROR_HANDLE);
 #else
@@ -92,6 +116,13 @@ struct ConsoleLogger : public ILogger
 
     static void _reportHead(const char* modName, const char* sourceInfo, Level severity)
     {
+        /* Clear current line out */
+        int width = ConsoleWidth();
+        fprintf(stderr, "\r");
+        for (int w=0 ; w<width ; ++w)
+            fprintf(stderr, " ");
+        fprintf(stderr, "\r");
+        
         std::chrono::steady_clock::duration tm = CurrentUptime();
         double tmd = tm.count() *
             std::chrono::steady_clock::duration::period::num /
@@ -101,70 +132,29 @@ struct ConsoleLogger : public ILogger
         if (ThreadMap.find(thrId) != ThreadMap.end())
             thrName = ThreadMap[thrId];
 
-#if _WIN32
-        SetConsoleTextAttribute(Term, FOREGROUND_INTENSITY | FOREGROUND_WHITE);
-        fprintf(stderr, "[");
-        SetConsoleTextAttribute(Term, FOREGROUND_INTENSITY | FOREGROUND_GREEN);
-        fprintf(stderr, "%5.4f ", tmd);
-        uint64_t fi = FrameIndex.load();
-        if (fi)
-            fprintf(stderr, "(%" PRIu64 ") ", fi);
-        switch (severity)
-        {
-        case Info:
-            SetConsoleTextAttribute(Term, FOREGROUND_INTENSITY | FOREGROUND_GREEN | FOREGROUND_BLUE);
-            fprintf(stderr, "INFO");
-            break;
-        case Warning:
-            SetConsoleTextAttribute(Term, FOREGROUND_INTENSITY | FOREGROUND_RED | FOREGROUND_GREEN);
-            fprintf(stderr, "WARNING");
-            break;
-        case Error:
-            SetConsoleTextAttribute(Term, FOREGROUND_INTENSITY | FOREGROUND_RED);
-            fprintf(stderr, "ERROR");
-            break;
-        case FatalError:
-            SetConsoleTextAttribute(Term, FOREGROUND_INTENSITY | FOREGROUND_RED);
-            fprintf(stderr, "FATAL ERROR");
-            break;
-        default:
-            break;
-        };
-        SetConsoleTextAttribute(Term, FOREGROUND_INTENSITY | FOREGROUND_WHITE);
-        fprintf(stderr, " %s", modName);
-        SetConsoleTextAttribute(Term, FOREGROUND_INTENSITY | FOREGROUND_RED | FOREGROUND_GREEN);
-        if (sourceInfo)
-            fprintf(stderr, " {%s}", sourceInfo);
-        SetConsoleTextAttribute(Term, FOREGROUND_INTENSITY | FOREGROUND_RED | FOREGROUND_BLUE);
-        if (thrName)
-            fprintf(stderr, " (%s)", thrName);
-        SetConsoleTextAttribute(Term, FOREGROUND_INTENSITY | FOREGROUND_WHITE);
-        fprintf(stderr, "] ");
-        SetConsoleTextAttribute(Term, FOREGROUND_WHITE);
-#else
         if (XtermColor)
         {
             fprintf(stderr, BOLD "[");
             fprintf(stderr, GREEN "%5.4f ", tmd);
             uint_fast64_t fIdx = FrameIndex.load();
             if (fIdx)
-                fprintf(stderr, "(%lu) ", fIdx);
+                fprintf(stderr, "(%" PRIu64 ") ", fIdx);
             switch (severity)
             {
-            case Info:
-                fprintf(stderr, BOLD CYAN "INFO");
-                break;
-            case Warning:
-                fprintf(stderr, BOLD YELLOW "WARNING");
-                break;
-            case Error:
-                fprintf(stderr, RED BOLD "ERROR");
-                break;
-            case FatalError:
-                fprintf(stderr, BOLD RED "FATAL ERROR");
-                break;
-            default:
-                break;
+                case Info:
+                    fprintf(stderr, BOLD CYAN "INFO");
+                    break;
+                case Warning:
+                    fprintf(stderr, BOLD YELLOW "WARNING");
+                    break;
+                case Error:
+                    fprintf(stderr, RED BOLD "ERROR");
+                    break;
+                case FatalError:
+                    fprintf(stderr, BOLD RED "FATAL ERROR");
+                    break;
+                default:
+                    break;
             };
             fprintf(stderr, NORMAL BOLD " %s", modName);
             if (sourceInfo)
@@ -175,11 +165,52 @@ struct ConsoleLogger : public ILogger
         }
         else
         {
+#if _WIN32
+            SetConsoleTextAttribute(Term, FOREGROUND_INTENSITY | FOREGROUND_WHITE);
+            fprintf(stderr, "[");
+            SetConsoleTextAttribute(Term, FOREGROUND_INTENSITY | FOREGROUND_GREEN);
+            fprintf(stderr, "%5.4f ", tmd);
+            uint64_t fi = FrameIndex.load();
+            if (fi)
+                fprintf(stderr, "(%" PRIu64 ") ", fi);
+            switch (severity)
+            {
+            case Info:
+                SetConsoleTextAttribute(Term, FOREGROUND_INTENSITY | FOREGROUND_GREEN | FOREGROUND_BLUE);
+                fprintf(stderr, "INFO");
+                break;
+            case Warning:
+                SetConsoleTextAttribute(Term, FOREGROUND_INTENSITY | FOREGROUND_RED | FOREGROUND_GREEN);
+                fprintf(stderr, "WARNING");
+                break;
+            case Error:
+                SetConsoleTextAttribute(Term, FOREGROUND_INTENSITY | FOREGROUND_RED);
+                fprintf(stderr, "ERROR");
+                break;
+            case FatalError:
+                SetConsoleTextAttribute(Term, FOREGROUND_INTENSITY | FOREGROUND_RED);
+                fprintf(stderr, "FATAL ERROR");
+                break;
+            default:
+                break;
+            };
+            SetConsoleTextAttribute(Term, FOREGROUND_INTENSITY | FOREGROUND_WHITE);
+            fprintf(stderr, " %s", modName);
+            SetConsoleTextAttribute(Term, FOREGROUND_INTENSITY | FOREGROUND_RED | FOREGROUND_GREEN);
+            if (sourceInfo)
+                fprintf(stderr, " {%s}", sourceInfo);
+            SetConsoleTextAttribute(Term, FOREGROUND_INTENSITY | FOREGROUND_RED | FOREGROUND_BLUE);
+            if (thrName)
+                fprintf(stderr, " (%s)", thrName);
+            SetConsoleTextAttribute(Term, FOREGROUND_INTENSITY | FOREGROUND_WHITE);
+            fprintf(stderr, "] ");
+            SetConsoleTextAttribute(Term, FOREGROUND_WHITE);
+#else
             fprintf(stderr, "[");
             fprintf(stderr, "%5.4f ", tmd);
             uint_fast64_t fIdx = FrameIndex.load();
             if (fIdx)
-                fprintf(stderr, "(%lu) ", fIdx);
+                fprintf(stderr, "(%" PRIu64 ") ", fIdx);
             switch (severity)
             {
             case Info:
@@ -203,8 +234,8 @@ struct ConsoleLogger : public ILogger
             if (thrName)
                 fprintf(stderr, " (%s)", thrName);
             fprintf(stderr, "] ");
-        }
 #endif
+        }
     }
 
     void report(const char* modName, Level severity,
