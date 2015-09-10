@@ -73,7 +73,7 @@ static inline int ConsoleWidth()
 #if _WIN32
     CONSOLE_SCREEN_BUFFER_INFO info;
     GetConsoleScreenBufferInfo(GetStdHandle(STD_OUTPUT_HANDLE), &info);
-    retval = info.dwSize.X;
+    retval = info.dwSize.X - 1;
 #else
     struct winsize w;
     if (ioctl(STDOUT_FILENO, TIOCGWINSZ, &w) != -1)
