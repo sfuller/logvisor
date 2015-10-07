@@ -92,7 +92,7 @@ static HANDLE Term = 0;
 #else
 static const char* Term = nullptr;
 #endif
-static bool XtermColor = false;
+bool XtermColor = false;
 struct ConsoleLogger : public ILogger
 {
     std::mutex m;

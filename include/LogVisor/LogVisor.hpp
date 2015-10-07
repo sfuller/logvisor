@@ -16,6 +16,9 @@ namespace LogVisor
 #define LOG_UCS2 1
 #endif
 
+/* True if ANSI color available */
+extern bool XtermColor;
+
 /**
  * @brief Severity level for log messages
  */
