@@ -6,6 +6,8 @@
 #define NOMINMAX
 #endif
 #include <windows.h>
+#include <io.h>
+#include <fcntl.h>
 #else
 #include <sys/ioctl.h>
 #include <fcntl.h>
@@ -296,6 +298,18 @@ void RegisterConsoleLogger()
     /* Otherwise construct new console logger */
     MainLoggers.emplace_back(new ConsoleLogger);
 }
+
+#if _WIN32
+void CreateWin32Console()
+{
+    /* Debug console */
+    AllocConsole();
+
+    freopen("CONIN$", "r", stdin);
+    freopen("CONOUT$", "w", stdout);
+    freopen("CONOUT$", "w", stderr);
+}
+#endif
 
 struct FileLogger : public ILogger
 {

@@ -98,6 +98,13 @@ void RegisterConsoleLogger();
  */
 void RegisterFileLogger(const char* filepath);
 
+#if _WIN32
+/**
+ * @brief Spawn an application-owned cmd.exe window for displaying console output
+ */
+void CreateWin32Console();
+#endif
+
 #if LOG_UCS2
 
 /**
