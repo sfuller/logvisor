@@ -35,6 +35,8 @@
 #define FOREGROUND_WHITE FOREGROUND_RED|FOREGROUND_GREEN|FOREGROUND_BLUE
 #endif
 
+void LogVisorBp() {}
+
 namespace LogVisor
 {
 

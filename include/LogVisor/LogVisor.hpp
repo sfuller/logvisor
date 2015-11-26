@@ -9,6 +9,8 @@
 #include <atomic>
 #include <memory>
 
+extern "C" void LogVisorBp();
+
 namespace LogVisor
 {
 
@@ -145,6 +147,8 @@ public:
     {
         for (auto& logger : MainLoggers)
             logger->report(m_modName, severity, format, ap);
+        if (severity == Error || severity == FatalError)
+            LogVisorBp();
         if (severity == FatalError)
             abort();
         else if (severity == Error)
