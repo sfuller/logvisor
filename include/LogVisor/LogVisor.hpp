@@ -146,7 +146,12 @@ public:
     inline void report(Level severity, const CharType* format, va_list ap)
     {
         for (auto& logger : MainLoggers)
-            logger->report(m_modName, severity, format, ap);
+        {
+            va_list apc;
+            va_copy(apc, ap);
+            logger->report(m_modName, severity, format, apc);
+            va_end(apc);
+        }
         if (severity == Error || severity == FatalError)
             LogVisorBp();
         if (severity == FatalError)
@@ -175,7 +180,13 @@ public:
     inline void reportSource(Level severity, const char* file, unsigned linenum, const CharType* format, va_list ap)
     {
         for (auto& logger : MainLoggers)
-            logger->reportSource(m_modName, severity, file, linenum, format, ap);
+        {
+            va_list apc;
+            va_copy(apc, ap);
+            logger->reportSource(m_modName, severity, file, linenum, format, apc);
+            va_end(apc);
+        }
+
         if (severity == FatalError)
             abort();
         else if (severity == Error)

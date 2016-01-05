@@ -332,6 +332,10 @@ struct FileLogger : public ILogger
             thrName = ThreadMap[thrId];
 
         fprintf(fp, "[");
+        fprintf(fp, "%5.4f ", tmd);
+        uint_fast64_t fIdx = FrameIndex.load();
+        if (fIdx)
+            fprintf(fp, "(%" PRIu64 ") ", fIdx);
         switch (severity)
         {
         case Info:
@@ -351,13 +355,9 @@ struct FileLogger : public ILogger
         };
         fprintf(fp, " %s", modName);
         if (sourceInfo)
-            fprintf(stderr, " {%s}", sourceInfo);
+            fprintf(fp, " {%s}", sourceInfo);
         if (thrName)
             fprintf(fp, " (%s)", thrName);
-        fprintf(fp, " %5.4f", tmd);
-        uint_fast64_t fIdx = FrameIndex.load();
-        if (fIdx)
-            fprintf(fp, " (%" PRIu64 ")", fIdx);
         fprintf(fp, "] ");
     }
 
