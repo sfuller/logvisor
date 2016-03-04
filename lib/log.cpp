@@ -20,7 +20,7 @@
 #include <unordered_map>
 #include <stdio.h>
 #include <inttypes.h>
-#include "LogVisor/LogVisor.hpp"
+#include "log-visor/log.hpp"
 
 /* ANSI sequences */
 #define RED "\x1b[1;31m"
