@@ -11,7 +11,7 @@
 
 extern "C" void LogVisorBp();
 
-namespace LogVisor
+namespace logvisor
 {
 
 #if _WIN32 && UNICODE
@@ -29,7 +29,7 @@ enum Level
     Info,        /**< Non-error informative message */
     Warning,     /**< Non-error warning message */
     Error,       /**< Recoverable error message */
-    FatalError   /**< Non-recoverable error message (throws exception) */
+    Fatal        /**< Non-recoverable error message (throws exception) */
 };
 
 /**
@@ -122,11 +122,11 @@ void RegisterFileLogger(const wchar_t* filepath);
 /**
  * @brief This is constructed per-subsystem in a locally centralized fashon
  */
-class LogModule
+class Module
 {
     const char* m_modName;
 public:
-    LogModule(const char* modName) : m_modName(modName) {}
+    Module(const char* modName) : m_modName(modName) {}
 
     /**
      * @brief Route new log message to centralized ILogger
@@ -152,9 +152,9 @@ public:
             logger->report(m_modName, severity, format, apc);
             va_end(apc);
         }
-        if (severity == Error || severity == FatalError)
+        if (severity == Error || severity == Fatal)
             LogVisorBp();
-        if (severity == FatalError)
+        if (severity == Fatal)
             abort();
         else if (severity == Error)
             ++ErrorCount;
@@ -187,7 +187,7 @@ public:
             va_end(apc);
         }
 
-        if (severity == FatalError)
+        if (severity == Fatal)
             abort();
         else if (severity == Error)
             ++ErrorCount;

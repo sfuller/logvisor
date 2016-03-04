@@ -37,7 +37,7 @@
 
 void LogVisorBp() {}
 
-namespace LogVisor
+namespace logvisor
 {
 
 static std::unordered_map<std::thread::id, const char*> ThreadMap;
@@ -157,7 +157,7 @@ struct ConsoleLogger : public ILogger
                 case Error:
                     fprintf(stderr, RED BOLD "ERROR");
                     break;
-                case FatalError:
+                case Fatal:
                     fprintf(stderr, BOLD RED "FATAL ERROR");
                     break;
                 default:
@@ -229,7 +229,7 @@ struct ConsoleLogger : public ILogger
             case Error:
                 fprintf(stderr, "ERROR");
                 break;
-            case FatalError:
+            case Fatal:
                 fprintf(stderr, "FATAL ERROR");
                 break;
             default:
@@ -347,7 +347,7 @@ struct FileLogger : public ILogger
         case Error:
             fprintf(fp, "ERROR");
             break;
-        case FatalError:
+        case Fatal:
             fprintf(fp, "FATAL ERROR");
             break;
         default:
