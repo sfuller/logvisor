@@ -1,8 +1,8 @@
 include_directories(include)
-add_library(log-visor
-            lib/log.cpp
-            include/log-visor/log.hpp)
+add_library(logvisor
+            lib/logvisor.cpp
+            include/logvisor/logvisor.hpp)
 
-set(LOG_VISOR_INCLUDE_DIR ${CMAKE_CURRENT_SOURCE_DIR}/include CACHE PATH "log-visor include path" FORCE)
+set(LOGVISOR_INCLUDE_DIR ${CMAKE_CURRENT_SOURCE_DIR}/include CACHE PATH "logvisor include path" FORCE)
 
-install(DIRECTORY include/log-visor DESTINATION include/log-visor)
+install(DIRECTORY include/logvisor DESTINATION include/logvisor)
