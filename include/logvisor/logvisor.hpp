@@ -9,7 +9,7 @@
 #include <atomic>
 #include <memory>
 
-extern "C" void LogVisorBp();
+extern "C" void logvisorBp();
 
 namespace logvisor
 {
@@ -153,7 +153,7 @@ public:
             va_end(apc);
         }
         if (severity == Error || severity == Fatal)
-            LogVisorBp();
+            logvisorBp();
         if (severity == Fatal)
             abort();
         else if (severity == Error)
