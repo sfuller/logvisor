@@ -73,7 +73,7 @@ static std::chrono::steady_clock::time_point GlobalStart = MonoClock.now();
 static inline std::chrono::steady_clock::duration CurrentUptime()
 {return MonoClock.now() - GlobalStart;}
 std::atomic_uint_fast64_t FrameIndex(0);
-    
+
 static inline int ConsoleWidth()
 {
     int retval = 80;
@@ -129,7 +129,7 @@ struct ConsoleLogger : public ILogger
         for (int w=0 ; w<width ; ++w)
             fprintf(stderr, " ");
         fprintf(stderr, "\r");
-        
+
         std::chrono::steady_clock::duration tm = CurrentUptime();
         double tmd = tm.count() *
             std::chrono::steady_clock::duration::period::num /
@@ -194,7 +194,7 @@ struct ConsoleLogger : public ILogger
                 SetConsoleTextAttribute(Term, FOREGROUND_INTENSITY | FOREGROUND_RED);
                 fprintf(stderr, "ERROR");
                 break;
-            case FatalError:
+            case Fatal:
                 SetConsoleTextAttribute(Term, FOREGROUND_INTENSITY | FOREGROUND_RED);
                 fprintf(stderr, "FATAL ERROR");
                 break;
