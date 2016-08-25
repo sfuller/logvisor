@@ -73,6 +73,7 @@ static std::chrono::steady_clock::time_point GlobalStart = MonoClock.now();
 static inline std::chrono::steady_clock::duration CurrentUptime()
 {return MonoClock.now() - GlobalStart;}
 std::atomic_uint_fast64_t FrameIndex(0);
+std::mutex LogMutex;
 
 static inline int ConsoleWidth()
 {

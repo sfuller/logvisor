@@ -8,6 +8,7 @@
 #include <vector>
 #include <atomic>
 #include <memory>
+#include <mutex>
 
 extern "C" void logvisorBp();
 
@@ -80,6 +81,19 @@ extern std::atomic_size_t ErrorCount;
 extern std::atomic_uint_fast64_t FrameIndex;
 
 /**
+ * @brief Centralized logging lock
+ *
+ * Ensures logging streams aren't written concurrently
+ */
+extern std::mutex LogMutex;
+
+/**
+ * @brief Take a centralized lock for the logging output stream(s)
+ * @return RAII mutex lock
+ */
+static inline std::unique_lock<std::mutex> LockLog() {return std::unique_lock<std::mutex>{LogMutex};}
+
+/**
  * @brief Restore centralized logger vector to default state (silent operation)
  */
 static inline void UnregisterLoggers() {MainLoggers.clear();}
@@ -145,6 +159,7 @@ public:
     template <typename CharType>
     inline void report(Level severity, const CharType* format, va_list ap)
     {
+        auto lk = LockLog();
         for (auto& logger : MainLoggers)
         {
             va_list apc;
@@ -179,6 +194,7 @@ public:
     template <typename CharType>
     inline void reportSource(Level severity, const char* file, unsigned linenum, const CharType* format, va_list ap)
     {
+        auto lk = LockLog();
         for (auto& logger : MainLoggers)
         {
             va_list apc;
