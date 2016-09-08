@@ -7,19 +7,19 @@
 #endif
 #include <windows.h>
 #include <io.h>
-#include <fcntl.h>
 #else
 #include <sys/ioctl.h>
-#include <fcntl.h>
 #include <unistd.h>
 #endif
 
+#include <fcntl.h>
 #include <chrono>
 #include <mutex>
 #include <thread>
 #include <unordered_map>
 #include <stdio.h>
 #include <inttypes.h>
+#include <signal.h>
 #include "logvisor/logvisor.hpp"
 
 /* ANSI sequences */
@@ -39,6 +39,7 @@ void logvisorBp() {}
 
 namespace logvisor
 {
+static Module Log("logvisor");
 
 static std::unordered_map<std::thread::id, const char*> ThreadMap;
 void RegisterThreadName(const char* name)
@@ -64,6 +65,86 @@ void RegisterThreadName(const char* name)
     {
     }
 #endif
+}
+
+#if _WIN32
+#include <DbgHelp.h>
+#pragma comment(lib, "Dbghelp.lib")
+
+static void logvisorAbort()
+{
+    unsigned int i;
+    void* stack[100];
+    unsigned short frames;
+    SYMBOL_INFO* symbol;
+    HANDLE process;
+
+    process = GetCurrentProcess();
+    SymInitialize(process, NULL, TRUE);
+    frames = CaptureStackBackTrace(0, 100, stack, NULL);
+    symbol = (SYMBOL_INFO*)calloc(sizeof(SYMBOL_INFO) + 256 * sizeof(char), 1);
+    symbol->MaxNameLen = 255;
+    symbol->SizeOfStruct = sizeof(SYMBOL_INFO);
+
+    for (i = 0; i < frames; i++)
+    {
+        SymFromAddr(process, (DWORD64)(stack[i]), 0, symbol);
+
+        printf("%i: %s - 0x%0llX", frames - i - 1, symbol->Name, symbol->Address);
+
+        DWORD dwDisplacement;
+        IMAGEHLP_LINE64 line;
+        SymSetOptions(SYMOPT_LOAD_LINES);
+
+        line.SizeOfStruct = sizeof(IMAGEHLP_LINE64);
+        if (SymGetLineFromAddr64(process, (DWORD64)(stack[i]), &dwDisplacement, &line))
+        {
+            // SymGetLineFromAddr64 returned success
+            printf(" LINE %d\n", line.LineNumber);
+        }
+        else
+        {
+            printf("\n");
+        }
+    }
+
+    free(symbol);
+
+    // If you caught one of the above signals, it is likely you just
+    // want to quit your program right now.
+    abort();
+}
+#else
+
+#include <execinfo.h>
+void logvisorAbort()
+{
+    void* array[128];
+    size_t size = backtrace(array, 128);
+    char** strings = backtrace_symbols(array, size);
+
+    for (size_t i = 0; i < size; i++)
+       printf("%s\n", strings[i]);
+
+    free(strings);
+    abort();
+}
+
+#endif
+
+static void AbortHandler(int signum)
+{
+    switch (signum)
+    {
+    case SIGSEGV:
+        Log.report(logvisor::Fatal, "Segmentation Fault");
+    case SIGILL:
+        Log.report(logvisor::Fatal, "Bad Execution");
+    case SIGFPE:
+        Log.report(logvisor::Fatal, "Floating Point Exception");
+    default:
+        Log.report(logvisor::Fatal, "unknown signal %d", signum);
+    }
 }
 
 std::vector<std::unique_ptr<ILogger>> MainLoggers;
@@ -313,6 +394,13 @@ void CreateWin32Console()
     freopen("CONOUT$", "w", stderr);
 }
 #endif
+
+void RegisterStandardExceptions()
+{
+    signal(SIGSEGV, AbortHandler);
+    signal(SIGILL, AbortHandler);
+    signal(SIGFPE, AbortHandler);
+}
 
 struct FileLogger : public ILogger
 {

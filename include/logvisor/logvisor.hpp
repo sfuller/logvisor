@@ -15,6 +15,8 @@ extern "C" void logvisorBp();
 namespace logvisor
 {
 
+void logvisorAbort();
+
 #if _WIN32 && UNICODE
 #define LOG_UCS2 1
 #endif
@@ -114,6 +116,11 @@ void RegisterConsoleLogger();
  */
 void RegisterFileLogger(const char* filepath);
 
+/**
+ * @brief Register signal handlers with system for common client exceptions
+ */
+void RegisterStandardExceptions();
+
 #if _WIN32
 /**
  * @brief Spawn an application-owned cmd.exe window for displaying console output
@@ -170,7 +177,7 @@ public:
         if (severity == Error || severity == Fatal)
             logvisorBp();
         if (severity == Fatal)
-            abort();
+            logvisorAbort();
         else if (severity == Error)
             ++ErrorCount;
     }
@@ -204,7 +211,7 @@ public:
         }
 
         if (severity == Fatal)
-            abort();
+            logvisorAbort();
         else if (severity == Error)
             ++ErrorCount;
     }
