@@ -124,8 +124,9 @@ void logvisorAbort()
     char** strings = backtrace_symbols(array, size);
 
     for (size_t i = 0; i < size; i++)
-       printf("%s\n", strings[i]);
+       fprintf(stderr, "%s\n", strings[i]);
 
+    fflush(stderr);
     free(strings);
     abort();
 }
