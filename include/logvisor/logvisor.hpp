@@ -87,13 +87,14 @@ extern std::atomic_uint_fast64_t FrameIndex;
  *
  * Ensures logging streams aren't written concurrently
  */
-extern std::mutex LogMutex;
+extern std::recursive_mutex LogMutex;
 
 /**
  * @brief Take a centralized lock for the logging output stream(s)
  * @return RAII mutex lock
  */
-static inline std::unique_lock<std::mutex> LockLog() {return std::unique_lock<std::mutex>{LogMutex};}
+static inline std::unique_lock<std::recursive_mutex> LockLog()
+{return std::unique_lock<std::recursive_mutex>{LogMutex};}
 
 /**
  * @brief Restore centralized logger vector to default state (silent operation)

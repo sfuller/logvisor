@@ -157,7 +157,7 @@ static std::chrono::steady_clock::time_point GlobalStart = MonoClock.now();
 static inline std::chrono::steady_clock::duration CurrentUptime()
 {return MonoClock.now() - GlobalStart;}
 std::atomic_uint_fast64_t FrameIndex(0);
-std::mutex LogMutex;
+std::recursive_mutex LogMutex;
 
 static inline int ConsoleWidth()
 {
@@ -184,7 +184,6 @@ static const char* Term = nullptr;
 bool XtermColor = false;
 struct ConsoleLogger : public ILogger
 {
-    std::mutex m;
     ConsoleLogger()
     {
 #if _WIN32
@@ -333,7 +332,6 @@ struct ConsoleLogger : public ILogger
     void report(const char* modName, Level severity,
                 const char* format, va_list ap)
     {
-        std::unique_lock<std::mutex> lk(m);
         _reportHead(modName, nullptr, severity);
         vfprintf(stderr, format, ap);
         fprintf(stderr, "\n");
@@ -342,7 +340,6 @@ struct ConsoleLogger : public ILogger
     void report(const char* modName, Level severity,
                 const wchar_t* format, va_list ap)
     {
-        std::unique_lock<std::mutex> lk(m);
         _reportHead(modName, nullptr, severity);
         vfwprintf(stderr, format, ap);
         fprintf(stderr, "\n");
@@ -352,7 +349,6 @@ struct ConsoleLogger : public ILogger
                       const char* file, unsigned linenum,
                       const char* format, va_list ap)
     {
-        std::unique_lock<std::mutex> lk(m);
         char sourceInfo[128];
         snprintf(sourceInfo, 128, "%s:%u", file, linenum);
         _reportHead(modName, sourceInfo, severity);
@@ -364,7 +360,6 @@ struct ConsoleLogger : public ILogger
                       const char* file, unsigned linenum,
                       const wchar_t* format, va_list ap)
     {
-        std::unique_lock<std::mutex> lk(m);
         char sourceInfo[128];
         snprintf(sourceInfo, 128, "%s:%u", file, linenum);
         _reportHead(modName, sourceInfo, severity);
@@ -408,7 +403,6 @@ void RegisterStandardExceptions()
 struct FileLogger : public ILogger
 {
     FILE* fp;
-    std::mutex m;
     virtual void openFile()=0;
     virtual void closeFile() {fclose(fp);}
 
@@ -456,7 +450,6 @@ struct FileLogger : public ILogger
     void report(const char* modName, Level severity,
                 const char* format, va_list ap)
     {
-        std::unique_lock<std::mutex> lk(m);
         openFile();
         _reportHead(modName, nullptr, severity);
         vfprintf(fp, format, ap);
@@ -467,7 +460,6 @@ struct FileLogger : public ILogger
     void report(const char* modName, Level severity,
                 const wchar_t* format, va_list ap)
     {
-        std::unique_lock<std::mutex> lk(m);
         openFile();
         _reportHead(modName, nullptr, severity);
         vfwprintf(fp, format, ap);
@@ -479,7 +471,6 @@ struct FileLogger : public ILogger
                       const char* file, unsigned linenum,
                       const char* format, va_list ap)
     {
-        std::unique_lock<std::mutex> lk(m);
         openFile();
         char sourceInfo[128];
         snprintf(sourceInfo, 128, "%s:%u", file, linenum);
@@ -493,7 +484,6 @@ struct FileLogger : public ILogger
                       const char* file, unsigned linenum,
                       const wchar_t* format, va_list ap)
     {
-        std::unique_lock<std::mutex> lk(m);
         openFile();
         char sourceInfo[128];
         snprintf(sourceInfo, 128, "%s:%u", file, linenum);
