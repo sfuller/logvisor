@@ -71,7 +71,7 @@ void RegisterThreadName(const char* name)
 #include <DbgHelp.h>
 #pragma comment(lib, "Dbghelp.lib")
 
-static void logvisorAbort()
+void logvisorAbort()
 {
     unsigned int i;
     void* stack[100];
@@ -90,7 +90,7 @@ static void logvisorAbort()
     {
         SymFromAddr(process, (DWORD64)(stack[i]), 0, symbol);
 
-        printf("%i: %s - 0x%0llX", frames - i - 1, symbol->Name, symbol->Address);
+        fprintf(stderr, "%i: %s - 0x%0llX", frames - i - 1, symbol->Name, symbol->Address);
 
         DWORD dwDisplacement;
         IMAGEHLP_LINE64 line;
@@ -100,19 +100,21 @@ static void logvisorAbort()
         if (SymGetLineFromAddr64(process, (DWORD64)(stack[i]), &dwDisplacement, &line))
         {
             // SymGetLineFromAddr64 returned success
-            printf(" LINE %d\n", line.LineNumber);
+            fprintf(stderr, " LINE %d\n", line.LineNumber);
         }
         else
         {
-            printf("\n");
+            fprintf(stderr, "\n");
         }
     }
 
+    fflush(stderr);
     free(symbol);
 
     // If you caught one of the above signals, it is likely you just
     // want to quit your program right now.
-    abort();
+    system("PAUSE");
+    exit(1);
 }
 #else
 
