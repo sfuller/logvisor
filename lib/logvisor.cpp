@@ -10,6 +10,9 @@
 #else
 #include <sys/ioctl.h>
 #include <unistd.h>
+#include <dlfcn.h>
+#include <cxxabi.h>
+#include <string.h>
 #endif
 
 #include <fcntl.h>
@@ -123,13 +126,52 @@ void logvisorAbort()
 {
     void* array[128];
     size_t size = backtrace(array, 128);
-    char** strings = backtrace_symbols(array, size);
+
+    constexpr size_t exeBufSize = 1024 + 1;
+    char exeNameBuffer[exeBufSize] = {};
+
+#if __linux__
+    readlink("/proc/self/exe", exeNameBuffer, exeBufSize);
+#endif
 
     for (size_t i = 0; i < size; i++)
-       fprintf(stderr, "%s\n", strings[i]);
+    {
+        fprintf(stderr, "- ");
+
+        char cmdLine[512];
+#if __APPLE__
+        snprintf(cmdLine, 512, "atos -p %p %p", getpid(), array[i]);
+#else
+        snprintf(cmdLine, 512, "addr2line -C -f -e \"%s\" %p", exeNameBuffer, array[i]);
+#endif
+        FILE* fp = popen(cmdLine, "r");
+        if (fp)
+        {
+            char readBuf[256];
+            size_t readSz;
+            while ((readSz = fread(readBuf, 1, 256, fp)))
+                fwrite(readBuf, 1, readSz, stderr);
+            fclose(fp);
+        }
+        else
+        {
+            Dl_info dlip;
+            if (dladdr(array[i], &dlip))
+            {
+                int status;
+                char* demangledName = abi::__cxa_demangle(dlip.dli_sname, nullptr, nullptr, &status);
+                fprintf(stderr, "%p(%s+%p)\n", dlip.dli_saddr, demangledName ? demangledName : dlip.dli_sname,
+                        (void*)((uint8_t*)array[i] - (uint8_t*)dlip.dli_fbase));
+                free(demangledName);
+            }
+            else
+            {
+                fprintf(stderr, "%p\n", array[i]);
+            }
+        }
+    }
 
     fflush(stderr);
-    free(strings);
     abort();
 }
 
