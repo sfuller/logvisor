@@ -134,27 +134,34 @@ void logvisorAbort()
     readlink("/proc/self/exe", exeNameBuffer, exeBufSize);
 #endif
 
+    char cmdLine[1024];
+#if __APPLE__
+    snprintf(cmdLine, 1024, "atos -p %p", getpid());
+#else
+    snprintf(cmdLine, 1024, "addr2line -C -f -e \"%s\"", exeNameBuffer);
+#endif
+
+    std::string cmdLineStr = cmdLine;
     for (size_t i = 0; i < size; i++)
     {
-        fprintf(stderr, "- ");
+        snprintf(cmdLine, 128, " %p", array[i]);
+        cmdLineStr += cmdLine;
+    }
 
-        char cmdLine[512];
-#if __APPLE__
-        snprintf(cmdLine, 512, "atos -p %p %p", getpid(), array[i]);
-#else
-        snprintf(cmdLine, 512, "addr2line -C -f -e \"%s\" %p", exeNameBuffer, array[i]);
-#endif
-        FILE* fp = popen(cmdLine, "r");
-        if (fp)
+    FILE* fp = popen(cmdLineStr.c_str(), "r");
+    if (fp)
+    {
+        char readBuf[256];
+        size_t readSz;
+        while ((readSz = fread(readBuf, 1, 256, fp)))
+            fwrite(readBuf, 1, readSz, stderr);
+        pclose(fp);
+    }
+    else
+    {
+        for (size_t i = 0; i < size; i++)
         {
-            char readBuf[256];
-            size_t readSz;
-            while ((readSz = fread(readBuf, 1, 256, fp)))
-                fwrite(readBuf, 1, readSz, stderr);
-            fclose(fp);
-        }
-        else
-        {
+            fprintf(stderr, "- ");
             Dl_info dlip;
             if (dladdr(array[i], &dlip))
             {
