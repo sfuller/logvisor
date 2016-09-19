@@ -19,6 +19,7 @@
 #include <chrono>
 #include <mutex>
 #include <thread>
+#include <string>
 #include <unordered_map>
 #include <stdio.h>
 #include <inttypes.h>
