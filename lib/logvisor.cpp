@@ -137,7 +137,7 @@ void logvisorAbort()
 
     char cmdLine[1024];
 #if __APPLE__
-    snprintf(cmdLine, 1024, "atos -p %p", getpid());
+    snprintf(cmdLine, 1024, "atos -p %d", getpid());
 #else
     snprintf(cmdLine, 1024, "addr2line -C -f -e \"%s\"", exeNameBuffer);
 #endif
