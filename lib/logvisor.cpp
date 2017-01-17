@@ -46,11 +46,16 @@ namespace logvisor
 static Module Log("logvisor");
 
 static std::unordered_map<std::thread::id, const char*> ThreadMap;
-void RegisterThreadName(const char* name)
+
+static void AddThreadToMap(const char* name)
 {
     auto lk = LockLog();
     ThreadMap[std::this_thread::get_id()] = name;
-    lk.unlock();
+}
+
+void RegisterThreadName(const char* name)
+{
+    AddThreadToMap(name);
 #if __APPLE__
     pthread_setname_np(name);
 #elif __linux__
