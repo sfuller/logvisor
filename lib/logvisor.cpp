@@ -187,7 +187,8 @@ void logvisorAbort()
     }
 
     fflush(stderr);
-    abort();
+    fflush(stdout);
+    exit(1);
 }
 
 #endif
@@ -202,6 +203,8 @@ static void AbortHandler(int signum)
         Log.report(logvisor::Fatal, "Bad Execution");
     case SIGFPE:
         Log.report(logvisor::Fatal, "Floating Point Exception");
+    case SIGABRT:
+        Log.report(logvisor::Fatal, "Abort Signal");
     default:
         Log.report(logvisor::Fatal, "unknown signal %d", signum);
     }
@@ -452,6 +455,7 @@ void CreateWin32Console()
 
 void RegisterStandardExceptions()
 {
+    signal(SIGABRT, AbortHandler);
     signal(SIGSEGV, AbortHandler);
     signal(SIGILL, AbortHandler);
     signal(SIGFPE, AbortHandler);
