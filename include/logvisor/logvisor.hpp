@@ -87,14 +87,29 @@ extern std::atomic_uint_fast64_t FrameIndex;
  *
  * Ensures logging streams aren't written concurrently
  */
-extern std::recursive_mutex LogMutex;
+struct LogMutex
+{
+    bool enabled = true;
+    std::recursive_mutex mutex;
+    ~LogMutex() { enabled = false; }
+    std::unique_lock<std::recursive_mutex> lock()
+    {
+        if (enabled)
+            return std::unique_lock<std::recursive_mutex>(mutex);
+        else
+            return std::unique_lock<std::recursive_mutex>();
+    }
+};
+extern LogMutex _LogMutex;
 
 /**
  * @brief Take a centralized lock for the logging output stream(s)
  * @return RAII mutex lock
  */
 static inline std::unique_lock<std::recursive_mutex> LockLog()
-{return std::unique_lock<std::recursive_mutex>{LogMutex};}
+{
+    return _LogMutex.lock();
+}
 
 /**
  * @brief Restore centralized logger vector to default state (silent operation)

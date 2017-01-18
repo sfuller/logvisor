@@ -193,8 +193,11 @@ void logvisorAbort()
 
 #endif
 
+LogMutex _LogMutex;
+
 static void AbortHandler(int signum)
 {
+    _LogMutex.enabled = false;
     switch (signum)
     {
     case SIGSEGV:
@@ -217,7 +220,6 @@ static std::chrono::steady_clock::time_point GlobalStart = MonoClock.now();
 static inline std::chrono::steady_clock::duration CurrentUptime()
 {return MonoClock.now() - GlobalStart;}
 std::atomic_uint_fast64_t FrameIndex(0);
-std::recursive_mutex LogMutex;
 
 static inline int ConsoleWidth()
 {
