@@ -188,7 +188,8 @@ void logvisorAbort()
 
     fflush(stderr);
     fflush(stdout);
-    exit(1);
+    signal(SIGABRT, SIG_DFL);
+    abort();
 }
 
 #endif
