@@ -124,8 +124,8 @@ void logvisorAbort()
 
     // If you caught one of the above signals, it is likely you just
     // want to quit your program right now.
-    system("PAUSE");
-    exit(1);
+    signal(SIGABRT, SIG_DFL);
+    abort();
 }
 #else
 
