@@ -173,6 +173,8 @@ public:
     template <typename CharType>
     inline void report(Level severity, const CharType* format, ...)
     {
+        if (MainLoggers.empty() && severity != Level::Fatal)
+            return;
         va_list ap;
         va_start(ap, format);
         report(severity, format, ap);
@@ -208,6 +210,8 @@ public:
     template <typename CharType>
     inline void reportSource(Level severity, const char* file, unsigned linenum, const CharType* format, ...)
     {
+        if (MainLoggers.empty() && severity != Level::Fatal)
+            return;
         va_list ap;
         va_start(ap, format);
         reportSource(severity, file, linenum, format, ap);
