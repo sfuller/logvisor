@@ -152,7 +152,15 @@ void logvisorAbort()
     std::string cmdLineStr = cmdLine;
     for (size_t i = 0; i < size; i++)
     {
+#if __linux__
+        Dl_info dlip;
+        if (dladdr(array[i], &dlip))
+            snprintf(cmdLine, 128, " %p", (void*)((uint8_t*)array[i] - (uint8_t*)dlip.dli_fbase));
+        else
+            snprintf(cmdLine, 128, " %p", array[i]);
+#else
         snprintf(cmdLine, 128, " %p", array[i]);
+#endif
         cmdLineStr += cmdLine;
     }
 
