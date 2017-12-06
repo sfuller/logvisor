@@ -82,8 +82,15 @@ void RegisterThreadName(const char* name)
 #include <DbgHelp.h>
 #pragma comment(lib, "Dbghelp.lib")
 
+#if defined(WINAPI_FAMILY) && WINAPI_FAMILY != WINAPI_FAMILY_DESKTOP_APP
+#define WINDOWS_STORE 1
+#else
+#define WINDOWS_STORE 0
+#endif
+
 void logvisorAbort()
 {
+#if !WINDOWS_STORE
     unsigned int i;
     void* stack[100];
     unsigned short frames;
@@ -122,6 +129,7 @@ void logvisorAbort()
     fflush(stderr);
     free(symbol);
 
+#endif
     // If you caught one of the above signals, it is likely you just
     // want to quit your program right now.
     signal(SIGABRT, SIG_DFL);
@@ -234,9 +242,11 @@ static inline int ConsoleWidth()
 {
     int retval = 80;
 #if _WIN32
+#if !WINDOWS_STORE
     CONSOLE_SCREEN_BUFFER_INFO info;
     GetConsoleScreenBufferInfo(GetStdHandle(STD_OUTPUT_HANDLE), &info);
     retval = info.dwSize.X - 1;
+#endif
 #else
     struct winsize w;
     if (ioctl(STDOUT_FILENO, TIOCGWINSZ, &w) != -1)
@@ -258,9 +268,11 @@ struct ConsoleLogger : public ILogger
     ConsoleLogger()
     {
 #if _WIN32
+#if !WINDOWS_STORE
         const char* conemuANSI = getenv("ConEmuANSI");
         if (conemuANSI && !strcmp(conemuANSI, "ON"))
             XtermColor = true;
+#endif
         if (!Term)
             Term = GetStdHandle(STD_ERROR_HANDLE);
 #else
@@ -328,6 +340,7 @@ struct ConsoleLogger : public ILogger
         else
         {
 #if _WIN32
+#if !WINDOWS_STORE
             SetConsoleTextAttribute(Term, FOREGROUND_INTENSITY | FOREGROUND_WHITE);
             fprintf(stderr, "[");
             SetConsoleTextAttribute(Term, FOREGROUND_INTENSITY | FOREGROUND_GREEN);
@@ -367,6 +380,7 @@ struct ConsoleLogger : public ILogger
             SetConsoleTextAttribute(Term, FOREGROUND_INTENSITY | FOREGROUND_WHITE);
             fprintf(stderr, "] ");
             SetConsoleTextAttribute(Term, FOREGROUND_WHITE);
+#endif
 #else
             fprintf(stderr, "[");
             fprintf(stderr, "%5.4f ", tmd);
@@ -455,12 +469,14 @@ void RegisterConsoleLogger()
 #if _WIN32
 void CreateWin32Console()
 {
+#if !WINDOWS_STORE
     /* Debug console */
     AllocConsole();
 
     freopen("CONIN$", "r", stdin);
     freopen("CONOUT$", "w", stdout);
     freopen("CONOUT$", "w", stderr);
+#endif
 }
 #endif
 
