@@ -12,7 +12,7 @@
 #include <unistd.h>
 #include <dlfcn.h>
 #include <cxxabi.h>
-#include <string.h>
+#include <cstring>
 #endif
 
 #include <fcntl.h>
@@ -21,8 +21,8 @@
 #include <thread>
 #include <string>
 #include <unordered_map>
-#include <stdio.h>
-#include <inttypes.h>
+#include <cstdio>
+#include <cinttypes>
 #include <signal.h>
 #include "logvisor/logvisor.hpp"
 

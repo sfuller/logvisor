@@ -1,10 +1,10 @@
 #ifndef __LOG_VISOR_HPP__
 #define __LOG_VISOR_HPP__
 
-#include <stdarg.h>
-#include <string.h>
-#include <stdio.h>
-#include <stdlib.h>
+#include <cstdarg>
+#include <cstring>
+#include <cstdio>
+#include <cstdlib>
 #include <vector>
 #include <atomic>
 #include <memory>
