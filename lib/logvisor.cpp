@@ -7,6 +7,8 @@
 #endif
 #include <windows.h>
 #include <io.h>
+#include <DbgHelp.h>
+#include <TlHelp32.h>
 #else
 #include <sys/ioctl.h>
 #include <unistd.h>
@@ -79,7 +81,6 @@ void RegisterThreadName(const char* name)
 }
 
 #if _WIN32
-#include <DbgHelp.h>
 #pragma comment(lib, "Dbghelp.lib")
 
 #if defined(WINAPI_FAMILY) && WINAPI_FAMILY != WINAPI_FAMILY_DESKTOP_APP
@@ -87,6 +88,38 @@ void RegisterThreadName(const char* name)
 #else
 #define WINDOWS_STORE 0
 #endif
+
+void KillProcessTree()
+{
+    DWORD myprocID = GetCurrentProcessId();
+    PROCESSENTRY32 pe = {};
+    pe.dwSize = sizeof(PROCESSENTRY32);
+
+    HANDLE hSnap = ::CreateToolhelp32Snapshot(TH32CS_SNAPPROCESS, 0);
+
+    if (::Process32First(hSnap, &pe))
+    {
+        BOOL bContinue = TRUE;
+
+        // kill child processes
+        while (bContinue)
+        {
+            // only kill child processes
+            if (pe.th32ParentProcessID == myprocID)
+            {
+                HANDLE hChildProc = ::OpenProcess(PROCESS_ALL_ACCESS, FALSE, pe.th32ProcessID);
+
+                if (hChildProc)
+                {
+                    ::TerminateProcess(hChildProc, 1);
+                    ::CloseHandle(hChildProc);
+                }
+            }
+
+            bContinue = ::Process32Next(hSnap, &pe);
+        }
+    }
+}
 
 void logvisorAbort()
 {
@@ -130,12 +163,17 @@ void logvisorAbort()
     free(symbol);
 
 #endif
+
+    KillProcessTree();
+
     // If you caught one of the above signals, it is likely you just
     // want to quit your program right now.
     signal(SIGABRT, SIG_DFL);
     abort();
 }
 #else
+
+void KillProcessTree() {}
 
 #include <execinfo.h>
 void logvisorAbort()
@@ -204,6 +242,7 @@ void logvisorAbort()
 
     fflush(stderr);
     fflush(stdout);
+    KillProcessTree();
     signal(SIGABRT, SIG_DFL);
     abort();
 }
@@ -420,6 +459,7 @@ struct ConsoleLogger : public ILogger
         _reportHead(modName, nullptr, severity);
         vfprintf(stderr, format, ap);
         fprintf(stderr, "\n");
+        fflush(stderr);
     }
 
     void report(const char* modName, Level severity,
@@ -428,6 +468,7 @@ struct ConsoleLogger : public ILogger
         _reportHead(modName, nullptr, severity);
         vfwprintf(stderr, format, ap);
         fprintf(stderr, "\n");
+        fflush(stderr);
     }
 
     void reportSource(const char* modName, Level severity,
@@ -439,6 +480,7 @@ struct ConsoleLogger : public ILogger
         _reportHead(modName, sourceInfo, severity);
         vfprintf(stderr, format, ap);
         fprintf(stderr, "\n");
+        fflush(stderr);
     }
 
     void reportSource(const char* modName, Level severity,
@@ -450,6 +492,7 @@ struct ConsoleLogger : public ILogger
         _reportHead(modName, sourceInfo, severity);
         vfwprintf(stderr, format, ap);
         fprintf(stderr, "\n");
+        fflush(stderr);
     }
 };
 

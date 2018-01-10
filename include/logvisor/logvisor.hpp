@@ -54,6 +54,13 @@ struct ILogger
 };
 
 /**
+ * @brief Terminate all child processes
+ *
+ * Implicitly called on abort condition.
+ */
+void KillProcessTree();
+
+/**
  * @brief Assign calling thread a descriptive name
  * @param name Descriptive thread name
  */
