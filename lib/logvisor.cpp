@@ -243,8 +243,13 @@ void logvisorAbort()
     fflush(stderr);
     fflush(stdout);
     KillProcessTree();
+
+#ifndef NDEBUG
     signal(SIGABRT, SIG_DFL);
     abort();
+#else
+    exit(1);
+#endif
 }
 
 #endif
