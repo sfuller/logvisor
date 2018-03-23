@@ -278,6 +278,8 @@ static void AbortHandler(int signum)
     }
 }
 
+uint64_t _LogCounter;
+
 std::vector<std::unique_ptr<ILogger>> MainLoggers;
 std::atomic_size_t ErrorCount(0);
 static std::chrono::steady_clock MonoClock;

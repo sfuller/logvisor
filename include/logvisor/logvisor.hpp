@@ -118,6 +118,17 @@ static inline std::unique_lock<std::recursive_mutex> LockLog()
     return _LogMutex.lock();
 }
 
+extern uint64_t _LogCounter;
+
+/**
+ * @brief Get current count of logging events
+ * @return Log Count
+ */
+static inline uint64_t GetLogCounter()
+{
+    return _LogCounter;
+}
+
 /**
  * @brief Restore centralized logger vector to default state (silent operation)
  */
@@ -192,6 +203,7 @@ public:
     inline void report(Level severity, const CharType* format, va_list ap)
     {
         auto lk = LockLog();
+        ++_LogCounter;
         for (auto& logger : MainLoggers)
         {
             va_list apc;
@@ -229,6 +241,7 @@ public:
     inline void reportSource(Level severity, const char* file, unsigned linenum, const CharType* format, va_list ap)
     {
         auto lk = LockLog();
+        ++_LogCounter;
         for (auto& logger : MainLoggers)
         {
             va_list apc;
