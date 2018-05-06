@@ -196,7 +196,7 @@ void logvisorAbort()
 #if __APPLE__
     snprintf(cmdLine, 1024, "atos -p %d", getpid());
 #else
-    snprintf(cmdLine, 1024, "addr2line -C -f -e \"%s\"", exeNameBuffer);
+    snprintf(cmdLine, 1024, "2>/dev/null addr2line -C -f -e \"%s\"", exeNameBuffer);
 #endif
 
     std::string cmdLineStr = cmdLine;
