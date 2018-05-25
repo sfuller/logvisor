@@ -151,7 +151,7 @@ void logvisorAbort()
         if (SymGetLineFromAddr64(process, (DWORD64)(stack[i]), &dwDisplacement, &line))
         {
             // SymGetLineFromAddr64 returned success
-            fprintf(stderr, " LINE %d\n", line.LineNumber);
+            fprintf(stderr, " LINE %d\n", int(line.LineNumber));
         }
         else
         {
