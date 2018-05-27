@@ -204,6 +204,8 @@ public:
     {
         auto lk = LockLog();
         ++_LogCounter;
+        if (severity == Fatal)
+            RegisterConsoleLogger();
         for (auto& logger : MainLoggers)
         {
             va_list apc;
@@ -242,6 +244,8 @@ public:
     {
         auto lk = LockLog();
         ++_LogCounter;
+        if (severity == Fatal)
+            RegisterConsoleLogger();
         for (auto& logger : MainLoggers)
         {
             va_list apc;
