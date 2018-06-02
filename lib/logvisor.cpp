@@ -15,6 +15,9 @@
 #include <dlfcn.h>
 #include <cxxabi.h>
 #include <cstring>
+#if __linux__
+#include <sys/prctl.h>
+#endif
 #endif
 
 #include <fcntl.h>
@@ -61,7 +64,7 @@ void RegisterThreadName(const char* name)
 #if __APPLE__
     pthread_setname_np(name);
 #elif __linux__
-    pthread_setname_np(pthread_self(), name);
+    prctl(PR_SET_NAME, name);
 #elif _MSC_VER
     struct
     {
