@@ -10,6 +10,10 @@
 #include <memory>
 #include <mutex>
 
+#ifdef __SWITCH__
+#include "nxstl/mutex"
+#endif
+
 extern "C" void logvisorBp();
 
 namespace logvisor
