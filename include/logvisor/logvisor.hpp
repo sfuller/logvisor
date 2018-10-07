@@ -1,5 +1,4 @@
-#ifndef __LOG_VISOR_HPP__
-#define __LOG_VISOR_HPP__
+#pragma once
 
 #include <cstdarg>
 #include <cstring>
@@ -267,4 +266,3 @@ public:
 
 }
 
-#endif // __LOG_VISOR_HPP__
