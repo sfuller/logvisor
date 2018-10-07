@@ -9,6 +9,9 @@
 #include <io.h>
 #include <DbgHelp.h>
 #include <TlHelp32.h>
+#elif defined(__SWITCH__)
+#include <cstring>
+#include "nxstl/thread"
 #else
 #include <sys/ioctl.h>
 #include <unistd.h>
@@ -178,6 +181,12 @@ void logvisorAbort()
     exit(1);
 #endif
 }
+
+#elif defined(__SWITCH__)
+void logvisorAbort()
+{
+    exit(1);
+}
 #else
 
 void KillProcessTree() {}
@@ -300,6 +309,8 @@ static inline int ConsoleWidth()
     GetConsoleScreenBufferInfo(GetStdHandle(STD_OUTPUT_HANDLE), &info);
     retval = info.dwSize.X - 1;
 #endif
+#elif defined(__SWITCH__)
+    return 80;
 #else
     struct winsize w;
     if (ioctl(STDOUT_FILENO, TIOCGWINSZ, &w) != -1)
@@ -512,13 +523,6 @@ struct ConsoleLogger : public ILogger
 
 void RegisterConsoleLogger()
 {
-    /* Determine if console logger already added */
-    for (auto& logger : MainLoggers)
-    {
-        if (typeid(logger.get()) == typeid(ConsoleLogger))
-            return;
-    }
-
     /* Otherwise construct new console logger */
     MainLoggers.emplace_back(new ConsoleLogger);
 }
@@ -648,17 +652,6 @@ struct FileLogger8 : public FileLogger
 
 void RegisterFileLogger(const char* filepath)
 {
-    /* Determine if file logger already added */
-    for (auto& logger : MainLoggers)
-    {
-        FileLogger8* filelogger = dynamic_cast<FileLogger8*>(logger.get());
-        if (filelogger)
-        {
-            if (!strcmp(filepath, filelogger->m_filepath))
-                return;
-        }
-    }
-
     /* Otherwise construct new file logger */
     MainLoggers.emplace_back(new FileLogger8(filepath));
 }

@@ -1,7 +1,9 @@
 #ifndef _NXSTL_MUTEX
 #define _NXSTL_MUTEX 1
 #ifdef __SWITCH__
+extern "C" {
 #include <switch/kernel/mutex.h>
+}
 
 namespace std _GLIBCXX_VISIBILITY(default)
 {
